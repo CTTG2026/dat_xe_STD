@@ -55,6 +55,13 @@
     flex:none;
   }
   .xe-dropdown{ position:relative; }
+  .xe-add-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:nowrap;
+    min-width:0;
+  }
   .plate-toggle{
     display:inline-flex;
     align-items:center;
@@ -135,13 +142,17 @@
     background:#fff;
     color:var(--admin-btn);
     border:1px solid var(--border);
-    padding:5px 10px;
-    border-radius:6px;
-    font-size:0.72rem;
-    font-weight:600;
+    width:36px;
+    height:36px;
+    padding:0;
+    border-radius:50%;
+    font-size:1rem;
     cursor:pointer;
     font-family:inherit;
-    white-space:nowrap;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
   }
   .btn-admin.on{
     background:#FBEDE9;
@@ -172,8 +183,7 @@
     padding:0;
     height:22px;
     text-align:center;
-    white-space:normal;
-    word-break:break-word;
+    white-space:nowrap;
     overflow:hidden;
   }
   thead th{
@@ -230,10 +240,31 @@
     padding:2px 4px;
   }
   @media (max-width:720px){
+    .topbar{ flex-direction:column; align-items:stretch; }
+    .left-group{ flex-wrap:nowrap; }
+    .xe-add-row{ flex:1; min-width:0; }
+    .xe-dropdown{ flex:1 1 0; min-width:0; }
+    .plate-toggle{
+      width:100%;
+      justify-content:center;
+      padding:9px 8px;
+      font-size:0.78rem;
+      gap:5px;
+      white-space:normal;
+      text-align:center;
+      line-height:1.2;
+    }
+    .plate-toggle svg{ width:16px; height:16px; flex-shrink:0; }
+    #openModalBtn{
+      flex:0 0 auto;
+      padding:9px 12px;
+      font-size:0.8rem;
+      white-space:nowrap;
+    }
     td.slot.booked .label{
-      font-size:0.62rem;
-      line-height:1.15;
-      padding:1px 2px;
+      font-size:0.72rem;
+      line-height:1.2;
+      padding:2px 3px;
     }
   }
   body.admin-mode td.slot.booked{
@@ -411,17 +442,19 @@
   <div class="topbar">
     <div class="left-group">
       <img src="logo.jpg" alt="Logo" class="site-logo">
-      <div class="xe-dropdown">
-        <button type="button" class="plate-toggle" id="xeDropdownBtn">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="11" width="18" height="6" rx="1.5" stroke="white" stroke-width="1.8"/><circle cx="7.5" cy="17" r="1.4" fill="white"/><circle cx="16.5" cy="17" r="1.4" fill="white"/></svg>
-          <span id="xeDropdownBtnLabel">BIỂN SỐ XE</span> <span class="caret">▾</span>
-        </button>
-        <div class="xe-dropdown-menu" id="xeDropdownMenu"></div>
+      <div class="xe-add-row">
+        <div class="xe-dropdown">
+          <button type="button" class="plate-toggle" id="xeDropdownBtn">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="11" width="18" height="6" rx="1.5" stroke="white" stroke-width="1.8"/><circle cx="7.5" cy="17" r="1.4" fill="white"/><circle cx="16.5" cy="17" r="1.4" fill="white"/></svg>
+            <span id="xeDropdownBtnLabel">BIỂN SỐ XE</span> <span class="caret">▾</span>
+          </button>
+          <div class="xe-dropdown-menu" id="xeDropdownMenu"></div>
+        </div>
+        <button class="btn-add" id="openModalBtn">+ Đặt xe</button>
       </div>
-      <button class="btn-add" id="openModalBtn">+ Đăng ký đặt xe</button>
     </div>
     <div class="right-group">
-      <button class="btn-admin" id="adminToggleBtn">🔒 Chế độ Admin</button>
+      <button class="btn-admin" id="adminToggleBtn" title="Chế độ Admin">🔒</button>
     </div>
   </div>
 
@@ -551,7 +584,8 @@
       adminMode = false;
       adminPassword = '';
       document.body.classList.remove('admin-mode');
-      adminToggleBtn.textContent = '🔒 Chế độ Admin';
+      adminToggleBtn.textContent = '🔒';
+      adminToggleBtn.title = 'Chế độ Admin (đang tắt)';
       adminToggleBtn.classList.remove('on');
     } else {
       const pw = window.prompt('Nhập mật khẩu quản trị để bật chế độ xóa lịch:');
@@ -559,7 +593,8 @@
       adminPassword = pw.trim();
       adminMode = true;
       document.body.classList.add('admin-mode');
-      adminToggleBtn.textContent = '🔓 Đang ở chế độ Admin';
+      adminToggleBtn.textContent = '🔓';
+      adminToggleBtn.title = 'Đang ở chế độ Admin';
       adminToggleBtn.classList.add('on');
     }
   });
@@ -594,8 +629,8 @@
     return Math.floor(mins/60) + 'h' + pad(mins%60);
   }
 
-  const DAY_COL_WIDTH = 76; // độ rộng cố định mỗi cột ngày (px)
-  const TIME_COL_WIDTH = 100; // độ rộng cố định cột giờ bên trái (px)
+  const DAY_COL_WIDTH = 108; // độ rộng cố định mỗi cột ngày (px)
+  const TIME_COL_WIDTH = 90; // độ rộng cố định cột giờ bên trái (px)
 
   function renderGrid(){
     const visibleDates = getVisibleDates();
@@ -754,7 +789,8 @@
           adminMode = false;
           adminPassword = '';
           document.body.classList.remove('admin-mode');
-          adminToggleBtn.textContent = '🔒 Chế độ Admin';
+          adminToggleBtn.textContent = '🔒';
+          adminToggleBtn.title = 'Chế độ Admin (đang tắt)';
           adminToggleBtn.classList.remove('on');
         }
       } else {
