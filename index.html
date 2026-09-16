@@ -223,6 +223,13 @@
     line-height:1.25;
     padding:2px 4px;
   }
+  @media (max-width:720px){
+    td.slot.booked .label{
+      font-size:0.62rem;
+      line-height:1.15;
+      padding:1px 2px;
+    }
+  }
   body.admin-mode td.slot.booked{
     cursor:pointer;
   }
@@ -909,9 +916,14 @@
 
   /* ---------- Màn hình chọn xe ban đầu ---------- */
   const initialXeSelect = document.getElementById('initialXeSelect');
-  initialXeSelect.innerHTML = XE_LIST.map(car => `<option value="${car.plate}">${escapeHtml(car.label)}</option>`).join('');
+  initialXeSelect.innerHTML = '<option value="" selected disabled>-- Chọn xe --</option>' +
+    XE_LIST.map(car => `<option value="${car.plate}">${escapeHtml(car.label)}</option>`).join('');
 
   document.getElementById('initialXeConfirmBtn').addEventListener('click', () => {
+    if(!initialXeSelect.value){
+      alert('Vui lòng chọn 1 xe trước khi tiếp tục.');
+      return;
+    }
     currentXe = initialXeSelect.value;
     document.getElementById('selectXeOverlay').classList.remove('open');
     document.getElementById('appContent').style.display = '';
