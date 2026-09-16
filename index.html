@@ -164,15 +164,17 @@
     border-spacing:0;
     font-family:'IBM Plex Mono',monospace;
     font-size:0.72rem;
+    table-layout:fixed;
   }
   th, td{
     border-right:1px solid var(--grid-line);
     border-bottom:1px solid var(--grid-line);
     padding:0;
     height:22px;
-    min-width:52px;
     text-align:center;
-    white-space:nowrap;
+    white-space:normal;
+    word-break:break-word;
+    overflow:hidden;
   }
   thead th{
     position:sticky;
@@ -190,6 +192,10 @@
     z-index:3;
     background:#F7F8FA;
   }
+  thead th.past-day{
+    background:#E2E4E8;
+    color:#4B5563;
+  }
   tbody th{
     position:sticky;
     left:0;
@@ -200,7 +206,7 @@
     z-index:1;
     border-right:1px solid var(--border);
     text-align:right;
-    min-width:100px;
+    white-space:nowrap;
   }
   tbody tr:nth-child(4n+1) td, tbody tr:nth-child(4n+1) th{
     border-top:1.5px solid #9AA0AC;
@@ -415,8 +421,6 @@
       <button class="btn-add" id="openModalBtn">+ Đăng ký đặt xe</button>
     </div>
     <div class="right-group">
-      <label for="monthSelect">Chọn tháng:</label>
-      <select id="monthSelect"></select>
       <button class="btn-admin" id="adminToggleBtn">🔒 Chế độ Admin</button>
     </div>
   </div>
@@ -534,7 +538,6 @@
   updateXeButton();
   renderXeDropdownMenu();
 
-  const monthSelect = document.getElementById('monthSelect');
   const gridEl = document.getElementById('grid');
   let allBookings = [];
 
@@ -563,38 +566,18 @@
 
   function pad(n){ return String(n).padStart(2,'0'); }
 
-  function buildMonthOptions(){
-    const now = new Date();
-    const opts = [];
-    for(let offset=-1; offset<=5; offset++){
-      const d = new Date(now.getFullYear(), now.getMonth()+offset, 1);
-      opts.push({ y:d.getFullYear(), m:d.getMonth()+1 });
-    }
-    monthSelect.innerHTML = opts.map(o =>
-      `<option value="${o.y}-${pad(o.m)}">Tháng ${pad(o.m)}/${o.y}</option>`
-    ).join('');
-    const cur = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
-    monthSelect.value = cur;
-  }
+  function dateToStr(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
 
-  function daysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
-
-  // Chỉ hiện các ngày từ (hôm nay - 1 ngày) trở đi; ngày cũ hơn sẽ bị ẩn khỏi lưới
-  function getCutoffDate(){
+  // Cửa sổ ngày hiển thị: (hôm nay - 1) -> (hôm nay + 30), tự trượt theo ngày thật mỗi khi mở lại trang
+  function getVisibleDates(){
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-  }
-  function getVisibleDays(y, m){
-    const nDays = daysInMonth(y, m);
-    const cutoff = getCutoffDate();
-    const visible = [];
-    for(let d=1; d<=nDays; d++){
-      const dateObj = new Date(y, m-1, d);
-      if(dateObj.getTime() >= cutoff.getTime()){
-        visible.push(d);
-      }
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const dates = [];
+    for(let i = 0; i <= 31; i++){ // hôm qua (1) + hôm nay..+30 (31) = 32 ngày
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      dates.push(d);
     }
-    return visible;
+    return dates;
   }
 
   function buildTimeSlots(){
@@ -611,10 +594,14 @@
     return Math.floor(mins/60) + 'h' + pad(mins%60);
   }
 
+  const DAY_COL_WIDTH = 76; // độ rộng cố định mỗi cột ngày (px)
+  const TIME_COL_WIDTH = 100; // độ rộng cố định cột giờ bên trái (px)
+
   function renderGrid(){
-    const [y,m] = monthSelect.value.split('-').map(Number);
-    const visibleDays = getVisibleDays(y, m);
+    const visibleDates = getVisibleDates();
     const slots = buildTimeSlots();
+    const today = todayISO();
+    const yesterday = dateToStr(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 1));
 
     const byDate = {};
     allBookings.forEach(b => {
@@ -630,22 +617,23 @@
       });
     });
 
-    if(visibleDays.length === 0){
-      gridEl.innerHTML = '<tbody><tr><td style="padding:20px;font-family:Inter,sans-serif;color:#6B7280;">Tháng này không còn ngày nào để hiển thị.</td></tr></tbody>';
-      return;
-    }
+    // Cố định độ rộng cột bằng colgroup, để mọi ngày rộng bằng nhau, chữ tự xuống hàng thay vì làm giãn cột
+    let html = `<colgroup><col style="width:${TIME_COL_WIDTH}px">`;
+    visibleDates.forEach(() => { html += `<col style="width:${DAY_COL_WIDTH}px">`; });
+    html += '</colgroup>';
 
-    let html = '<thead><tr><th class="corner">Giờ \\ Ngày</th>';
-    visibleDays.forEach(d => {
-      html += `<th>${d}/${pad(m)}</th>`;
+    html += '<thead><tr><th class="corner">Giờ \\ Ngày</th>';
+    visibleDates.forEach(d => {
+      const dateStr = dateToStr(d);
+      const pastClass = dateStr === yesterday ? ' class="past-day"' : '';
+      html += `<th${pastClass}>${d.getDate()}/${pad(d.getMonth()+1)}</th>`;
     });
     html += '</tr></thead><tbody>';
 
     // Với mỗi ngày, xác định trước các khối đã đặt (để gộp ô bằng rowspan)
-    // colCells[day][slotIndex] = { type: 'empty' | 'skip' | 'bookedStart', span, booking }
     const colCells = {};
-    visibleDays.forEach(d => {
-      const dateStr = `${y}-${pad(m)}-${pad(d)}`;
+    visibleDates.forEach(d => {
+      const dateStr = dateToStr(d);
       const bookings = byDate[dateStr] || [];
       const cells = new Array(slots.length).fill(null).map(() => ({ type: 'empty' }));
       bookings.forEach(b => {
@@ -660,14 +648,14 @@
           cells[k] = { type: 'skip' };
         }
       });
-      colCells[d] = cells;
+      colCells[dateStr] = cells;
     });
 
     slots.forEach((mins, slotIdx) => {
       html += `<tr><th>${minToDisplayLabel(mins)} - ${minToDisplayLabel(mins+SLOT_MIN)}</th>`;
-      visibleDays.forEach(d => {
-        const dateStr = `${y}-${pad(m)}-${pad(d)}`;
-        const cell = colCells[d][slotIdx];
+      visibleDates.forEach(d => {
+        const dateStr = dateToStr(d);
+        const cell = colCells[dateStr][slotIdx];
         if (cell.type === 'skip') {
           return; // ô này đã được gộp vào rowspan của dòng phía trên, không render lại
         }
@@ -736,7 +724,7 @@
     }
   }
 
-  monthSelect.addEventListener('change', renderGrid);
+  // (Không còn chọn tháng — lưới tự động hiển thị cửa sổ ngày cố định mỗi lần renderGrid())
 
   // Xóa lịch (chỉ hoạt động khi bật chế độ Admin)
   gridEl.addEventListener('click', async (e) => {
@@ -911,8 +899,6 @@
       submitBtn.textContent = 'Đặt xe';
     }
   });
-
-  buildMonthOptions();
 
   /* ---------- Màn hình chọn xe ban đầu ---------- */
   const initialXeSelect = document.getElementById('initialXeSelect');
