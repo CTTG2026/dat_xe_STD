@@ -240,31 +240,33 @@
     padding:2px 4px;
   }
   @media (max-width:720px){
-    .topbar{ flex-direction:column; align-items:stretch; }
-    .left-group{ flex-wrap:nowrap; }
-    .xe-add-row{ flex:1; min-width:0; }
+    .topbar{ flex-direction:row; flex-wrap:nowrap; align-items:center; gap:6px; padding:10px 10px; }
+    .site-logo{ height:32px; flex-shrink:0; }
+    .left-group{ flex:1; flex-wrap:nowrap; min-width:0; gap:6px; }
+    .xe-add-row{ flex:1; min-width:0; gap:6px; }
     .xe-dropdown{ flex:1 1 0; min-width:0; }
     .plate-toggle{
       width:100%;
       justify-content:center;
-      padding:9px 8px;
-      font-size:0.78rem;
-      gap:5px;
+      padding:7px 5px;
+      font-size:0.62rem;
+      gap:3px;
       white-space:normal;
       text-align:center;
-      line-height:1.2;
+      line-height:1.15;
     }
-    .plate-toggle svg{ width:16px; height:16px; flex-shrink:0; }
+    .plate-toggle svg{ width:13px; height:13px; flex-shrink:0; }
     #openModalBtn{
       flex:0 0 auto;
-      padding:9px 12px;
-      font-size:0.8rem;
+      padding:7px 9px;
+      font-size:0.68rem;
       white-space:nowrap;
     }
+    .right-group{ flex-shrink:0; }
     td.slot.booked .label{
-      font-size:0.72rem;
-      line-height:1.2;
-      padding:2px 3px;
+      font-size:0.6rem;
+      line-height:1.15;
+      padding:1px 2px;
     }
   }
   body.admin-mode td.slot.booked{
@@ -458,11 +460,6 @@
     </div>
   </div>
 
-  <div class="legend">
-    <span class="swatch"></span> Ô đã tô màu = khung giờ đã được đặt
-    <span class="admin-hint">&nbsp;· Đang ở chế độ Admin — bấm vào ô đã đặt để xóa</span>
-  </div>
-
   <div class="grid-wrap">
     <table id="grid"></table>
   </div>
@@ -603,12 +600,12 @@
 
   function dateToStr(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
 
-  // Cửa sổ ngày hiển thị: (hôm nay - 1) -> (hôm nay + 30), tự trượt theo ngày thật mỗi khi mở lại trang
+  // Cửa sổ ngày hiển thị: hôm nay -> (hôm nay + 30), tự trượt theo ngày thật mỗi khi mở lại trang
   function getVisibleDates(){
     const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const dates = [];
-    for(let i = 0; i <= 31; i++){ // hôm qua (1) + hôm nay..+30 (31) = 32 ngày
+    for(let i = 0; i <= 30; i++){ // hôm nay..+30 = 31 ngày
       const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
       dates.push(d);
     }
