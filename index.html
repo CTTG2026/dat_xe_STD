@@ -274,9 +274,17 @@
     }
     .right-group{ flex-shrink:0; }
     td.slot.booked .label{
-      font-size:0.6rem;
-      line-height:1.15;
       padding:1px 2px;
+      word-break:normal;
+      overflow-wrap:normal;
+    }
+    td.slot.booked .label .dt{
+      font-size:0.52rem;
+      line-height:1.1;
+    }
+    td.slot.booked .label .name{
+      font-size:0.66rem;
+      line-height:1.15;
     }
   }
   body.admin-mode td.slot.booked{
