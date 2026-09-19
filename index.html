@@ -231,13 +231,24 @@
   td.slot.booked .label{
     display:block;
     font-family:'Inter',sans-serif;
-    font-size:0.95rem;
-    font-weight:700;
     color:var(--booked-text);
     white-space:normal;
     word-break:break-word;
-    line-height:1.25;
     padding:2px 4px;
+  }
+  td.slot.booked .label .dt{
+    display:block;
+    font-size:0.62rem;
+    font-weight:600;
+    line-height:1.15;
+    opacity:0.85;
+    margin-bottom:1px;
+  }
+  td.slot.booked .label .name{
+    display:block;
+    font-size:0.95rem;
+    font-weight:700;
+    line-height:1.25;
   }
   @media (max-width:720px){
     .topbar{ flex-direction:row; flex-wrap:nowrap; align-items:center; gap:6px; padding:10px 10px; }
@@ -711,7 +722,8 @@
               nameHtml = escapeHtml(b.nguoiDat);
             }
           }
-          html += `<td class="slot booked" style="${cellStyle}" rowspan="${cell.span}" data-id="${escapeAttr(b.id)}" data-name="${escapeAttr(b.nguoiDat)}" data-date="${dateStr}" data-start="${minToLabel(b.startMin)}" data-end="${minToLabel(b.endMin)}" title="${escapeAttr(title)}"><span class="label">${nameHtml}</span></td>`;
+          const dtLabel = `${pad(d.getDate())}/${pad(d.getMonth()+1)}, ${minToDisplayLabel(b.startMin)} - ${minToDisplayLabel(b.endMin)}`;
+          html += `<td class="slot booked" style="${cellStyle}" rowspan="${cell.span}" data-id="${escapeAttr(b.id)}" data-name="${escapeAttr(b.nguoiDat)}" data-date="${dateStr}" data-start="${minToLabel(b.startMin)}" data-end="${minToLabel(b.endMin)}" title="${escapeAttr(title)}"><span class="label"><span class="dt">${dtLabel}</span><span class="name">${nameHtml}</span></span></td>`;
         } else {
           html += '<td class="slot"></td>';
         }
