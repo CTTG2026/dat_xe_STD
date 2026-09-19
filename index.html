@@ -238,11 +238,10 @@
   }
   td.slot.booked .label .dt{
     display:block;
-    font-size:0.62rem;
+    font-size:0.78rem;
     font-weight:600;
-    line-height:1.15;
-    opacity:0.85;
-    margin-bottom:1px;
+    line-height:1.2;
+    opacity:0.9;
   }
   td.slot.booked .label .name{
     display:block;
@@ -722,8 +721,9 @@
               nameHtml = escapeHtml(b.nguoiDat);
             }
           }
-          const dtLabel = `${pad(d.getDate())}/${pad(d.getMonth()+1)}, ${minToDisplayLabel(b.startMin)} - ${minToDisplayLabel(b.endMin)}`;
-          html += `<td class="slot booked" style="${cellStyle}" rowspan="${cell.span}" data-id="${escapeAttr(b.id)}" data-name="${escapeAttr(b.nguoiDat)}" data-date="${dateStr}" data-start="${minToLabel(b.startMin)}" data-end="${minToLabel(b.endMin)}" title="${escapeAttr(title)}"><span class="label"><span class="dt">${dtLabel}</span><span class="name">${nameHtml}</span></span></td>`;
+          const ngayLabel = `${pad(d.getDate())}/${pad(d.getMonth()+1)}`;
+          const gioLabel = `${minToDisplayLabel(b.startMin)} - ${minToDisplayLabel(b.endMin)}`;
+          html += `<td class="slot booked" style="${cellStyle}" rowspan="${cell.span}" data-id="${escapeAttr(b.id)}" data-name="${escapeAttr(b.nguoiDat)}" data-date="${dateStr}" data-start="${minToLabel(b.startMin)}" data-end="${minToLabel(b.endMin)}" title="${escapeAttr(title)}"><span class="label"><span class="dt">${ngayLabel}</span><span class="dt">${gioLabel}</span><span class="name">${nameHtml}</span></span></td>`;
         } else {
           html += '<td class="slot"></td>';
         }
