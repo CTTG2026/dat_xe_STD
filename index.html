@@ -445,6 +445,13 @@
     cursor:pointer;
   }
   .btn-ok:hover{ background:var(--add-btn-dark); }
+
+.btn-add:disabled { opacity:.65; cursor:not-allowed; }
+#bookingStatus { margin:0; padding:8px 12px; background:#fff4cd; color:#775000; font-size:13px; }
+#carAdminBtn { background:#fff2cc; border:1px solid #d9ad43; border-radius:6px; padding:7px 10px; cursor:pointer; }
+#carAdminForm { display:grid; gap:14px; }
+#carAdminForm .lock-option { display:flex; align-items:center; gap:9px; }
+#carAdminForm input[type=checkbox] { width:auto; }
 </style>
 </head>
 <body>
@@ -474,10 +481,12 @@
       </div>
     </div>
     <div class="right-group">
+      <button type="button" id="carAdminBtn" hidden>Quản lý xe</button>
       <button class="btn-admin" id="adminToggleBtn" title="Chế độ Admin">🔒</button>
     </div>
   </div>
 
+  <p id="bookingStatus" role="status">Đang kiểm tra trạng thái đặt xe…</p>
   <div class="grid-wrap">
     <table id="grid"></table>
   </div>
@@ -533,16 +542,31 @@
     </div>
   </div>
 
+<div class="overlay" id="carAdminOverlay">
+  <div class="modal">
+    <h3>Quản lý xe</h3>
+    <form id="carAdminForm">
+      <div><label for="adminCarSelect">Xe</label><select id="adminCarSelect"></select></div>
+      <div><label for="adminPlate">Biển số xe</label><input id="adminPlate" required maxlength="20" autocomplete="off"></div>
+      <label class="lock-option"><input id="adminBookingOpen" type="checkbox"> Mở đặt xe</label>
+      <p style="margin:0;font-size:13px;">Bỏ chọn để khóa đặt mới. Lịch đã đặt vẫn được giữ lại.</p>
+      <p id="carAdminMsg" role="status"></p>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="closeCarAdmin">Đóng</button><button type="submit" class="btn-submit" id="saveCarAdmin">Lưu</button></div>
+    </form>
+  </div>
+</div>
 <script>
   // ĐIỀN URL WEB APP APPS SCRIPT CỦA BẠN VÀO ĐÂY SAU KHI DEPLOY
   const API_URL = 'https://script.google.com/macros/s/AKfycbyLZaNu3I7RpVRU6oX5SpyOPsKWMsWcO5R-TnA9nknMkWSAYMnyaJbu4bASbkaOfzO7/exec';
   // Danh sách xe: thêm xe mới vào đây là web tự nhận (xem hướng dẫn trong Code.gs
   // để tạo tab tương ứng trong Google Sheet cho mỗi xe — "plate" phải khớp với CARS trong Code.gs)
   const XE_LIST = [
-    { plate: '63A20430', label: '63A20430_ Hạng B', color: '#F97316' },
-    { plate: '63A20469', label: '63A20469_Hạng C1', color: '#DC2626' }
+    { plate: '63A20430', displayPlate: '63A20430', hang: 'B', label: '63A20430_ Hạng B', color: '#F97316', bookingOpen: false },
+    { plate: '63A20469', displayPlate: '63A20469', hang: 'C1', label: '63A20469_Hạng C1', color: '#DC2626', bookingOpen: true }
   ];
   let currentXe = XE_LIST[0].plate;
+  let carsReady = false;
+  let configRevision = 0;
 
   const DAY_START_MIN = 6*60;   // 06:00
   const DAY_END_MIN   = 22*60;  // 22:00
@@ -574,6 +598,7 @@
     if(!btn) return;
     currentXe = btn.dataset.plate;
     updateXeButton();
+    updateBookingStatus();
     renderXeDropdownMenu();
     xeDropdownMenu.classList.remove('open');
     loadBookings();
@@ -594,24 +619,101 @@
   let adminPassword = '';
   const adminToggleBtn = document.getElementById('adminToggleBtn');
 
-  adminToggleBtn.addEventListener('click', () => {
-    if (adminMode) {
-      adminMode = false;
-      adminPassword = '';
-      document.body.classList.remove('admin-mode');
-      adminToggleBtn.textContent = '🔒';
-      adminToggleBtn.title = 'Chế độ Admin (đang tắt)';
-      adminToggleBtn.classList.remove('on');
-    } else {
-      const pw = window.prompt('Nhập mật khẩu quản trị để bật chế độ xóa lịch:');
-      if (pw === null || pw.trim() === '') return;
-      adminPassword = pw.trim();
-      adminMode = true;
-      document.body.classList.add('admin-mode');
-      adminToggleBtn.textContent = '🔓';
-      adminToggleBtn.title = 'Đang ở chế độ Admin';
-      adminToggleBtn.classList.add('on');
+  function logoutAdmin(){
+    adminMode = false; adminPassword = '';
+    document.body.classList.remove('admin-mode');
+    adminToggleBtn.textContent = '🔒'; adminToggleBtn.classList.remove('on');
+    document.getElementById('carAdminBtn').hidden = true;
+    document.getElementById('carAdminOverlay').classList.remove('open');
+  }
+  async function postApi(payload){
+    const response = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload)});
+    const json = await response.json();
+    if(!json.ok) {
+      if(json.code === 'UNAUTHORIZED') logoutAdmin();
+      throw new Error(json.error || 'Không thực hiện được yêu cầu');
     }
+    return json;
+  }
+  adminToggleBtn.addEventListener('click', async () => {
+    if(adminMode) { logoutAdmin(); return; }
+    const pw = window.prompt('Nhập mật khẩu quản trị:');
+    if(!pw) return;
+    adminToggleBtn.disabled = true;
+    try {
+      await postApi({action:'carAdminAuth', password:pw});
+      adminPassword = pw; adminMode = true;
+      document.body.classList.add('admin-mode');
+      adminToggleBtn.textContent = '🔓'; adminToggleBtn.classList.add('on');
+      document.getElementById('carAdminBtn').hidden = false;
+      await openCarAdmin();
+    } catch(err) { alert(err.message); }
+    finally { adminToggleBtn.disabled = false; }
+  });
+
+  function applyCars(json){
+    if(!Array.isArray(json.cars) || !XE_LIST.every(car => json.cars.some(item => item.plate === car.plate && typeof item.bookingOpen === 'boolean'))) {
+      carsReady = false; updateBookingStatus();
+      throw new Error('Cần cập nhật phần quản trị xe trong Apps Script trước khi dùng bản HTML này.');
+    }
+    for(const car of XE_LIST){
+      const saved = json.cars.find(item => item.plate === car.plate);
+      car.displayPlate = saved.displayPlate;
+      car.bookingOpen = saved.bookingOpen;
+      car.label = saved.displayPlate + '_Hạng ' + car.hang;
+    }
+    configRevision = json.revision; carsReady = true;
+    updateXeButton(); renderXeDropdownMenu(); updateBookingStatus();
+    const select = document.getElementById('initialXeSelect');
+    const previous = select.value;
+    select.innerHTML = '<option value="" disabled>-- Chọn xe --</option>' + XE_LIST.map(car => `<option value="${car.plate}">${escapeHtml(car.label)}${car.bookingOpen ? '' : ' (Đã khóa đặt xe)'}</option>`).join('');
+    select.value = previous;
+  }
+  function updateBookingStatus(){
+    const car = XE_LIST.find(item => item.plate === currentXe);
+    const disabled = !carsReady || !car.bookingOpen;
+    document.getElementById('openModalBtn').disabled = disabled;
+    document.getElementById('openModalBtn').textContent = !carsReady ? 'Chưa sẵn sàng' : car.bookingOpen ? '+ Đặt xe' : 'Đã khóa đặt xe';
+    const status = document.getElementById('bookingStatus');
+    status.hidden = carsReady && car.bookingOpen;
+    status.textContent = !carsReady ? 'Chưa tải được trạng thái đặt xe. Vui lòng tải lại trang sau khi cập nhật Apps Script.' : 'Xe ' + car.displayPlate + ' đang khóa đặt mới. Bạn vẫn xem được lịch đã đặt.';
+    if(disabled) document.getElementById('overlay').classList.remove('open');
+  }
+  async function loadCarConfig(){
+    const response = await fetch(API_URL + '?action=carConfig', {cache:'no-store'});
+    const json = await response.json();
+    if(!json.ok) throw new Error(json.error || 'Không tải được cấu hình xe');
+    applyCars(json);
+  }
+  function fillCarAdmin(){
+    const car = XE_LIST.find(item => item.plate === document.getElementById('adminCarSelect').value);
+    document.getElementById('adminPlate').value = car.displayPlate;
+    document.getElementById('adminBookingOpen').checked = car.bookingOpen;
+  }
+  async function openCarAdmin(){
+    try {
+      await loadCarConfig();
+      document.getElementById('adminCarSelect').innerHTML = XE_LIST.map(car => `<option value="${car.plate}">${escapeHtml(car.label)}</option>`).join('');
+      document.getElementById('adminCarSelect').value = currentXe;
+      document.getElementById('carAdminMsg').textContent = '';
+      fillCarAdmin(); document.getElementById('carAdminOverlay').classList.add('open');
+    } catch(err) { alert(err.message); }
+  }
+  document.getElementById('carAdminBtn').addEventListener('click', openCarAdmin);
+  document.getElementById('adminCarSelect').addEventListener('change', fillCarAdmin);
+  document.getElementById('closeCarAdmin').addEventListener('click', () => document.getElementById('carAdminOverlay').classList.remove('open'));
+  document.getElementById('carAdminForm').addEventListener('submit', async event => {
+    event.preventDefault(); if(!adminMode) return;
+    const button = document.getElementById('saveCarAdmin'); button.disabled = true;
+    try {
+      const json = await postApi({action:'saveCarConfig', password:adminPassword, xe:document.getElementById('adminCarSelect').value,
+        displayPlate:document.getElementById('adminPlate').value.trim(), bookingOpen:document.getElementById('adminBookingOpen').checked, revision:configRevision});
+      applyCars(json);
+      document.getElementById('adminCarSelect').innerHTML = XE_LIST.map(car => `<option value="${car.plate}">${escapeHtml(car.label)}</option>`).join('');
+      document.getElementById('adminCarSelect').value = json.updatedXe; fillCarAdmin();
+      document.getElementById('carAdminMsg').textContent = 'Đã lưu.';
+    } catch(err) { document.getElementById('carAdminMsg').textContent = err.message; }
+    finally { button.disabled = false; }
   });
 
   function pad(n){ return String(n).padStart(2,'0'); }
@@ -766,9 +868,12 @@
 
   async function loadBookings(){
     try{
-      const res = await fetch(`${API_URL}?xe=${encodeURIComponent(currentXe)}`);
+      const requestedXe = currentXe;
+      const res = await fetch(`${API_URL}?xe=${encodeURIComponent(requestedXe)}`, {cache:'no-store'});
       const json = await res.json();
+      if(requestedXe !== currentXe) return;
       if(!json.ok) throw new Error(json.error || 'Lỗi tải dữ liệu');
+      applyCars(json);
       allBookings = json.data;
       renderGrid();
     }catch(err){
@@ -803,12 +908,7 @@
       if(!json.ok){
         alert('Không xóa được: ' + json.error);
         if(String(json.error).includes('Sai mật khẩu')){
-          adminMode = false;
-          adminPassword = '';
-          document.body.classList.remove('admin-mode');
-          adminToggleBtn.textContent = '🔒';
-          adminToggleBtn.title = 'Chế độ Admin (đang tắt)';
-          adminToggleBtn.classList.remove('on');
+          logoutAdmin();
         }
       } else {
         await loadBookings();
@@ -894,6 +994,7 @@
   }
 
   function openModal(){
+    if(!carsReady || !XE_LIST.find(car => car.plate === currentXe).bookingOpen) return;
     overlay.classList.add('open');
     const car = XE_LIST.find(c => c.plate === currentXe);
     document.getElementById('modalTitle').textContent = `Đăng ký đặt xe ${car ? car.label : currentXe}`;
@@ -913,6 +1014,7 @@
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if(!carsReady || !XE_LIST.find(car => car.plate === currentXe).bookingOpen) { updateBookingStatus(); return; }
     formMsg.className = 'msg';
     formMsg.style.display = 'none';
     submitBtn.disabled = true;
@@ -934,6 +1036,7 @@
         body: JSON.stringify(payload)
       });
       const json = await res.json();
+      if(json.cars) applyCars(json);
       if(!json.ok){
         formMsg.textContent = json.error;
         formMsg.className = 'msg error';
@@ -967,10 +1070,15 @@
     document.getElementById('selectXeOverlay').classList.remove('open');
     document.getElementById('appContent').style.display = '';
     updateXeButton();
+    updateBookingStatus();
     renderXeDropdownMenu();
     renderGrid();
     loadBookings();
   });
+  updateBookingStatus();
+  loadCarConfig().catch(() => { carsReady = false; updateBookingStatus(); });
+  // Đồng bộ khóa/mở và biển số trên các máy đang mở trang.
+  setInterval(() => loadCarConfig().catch(() => { carsReady = false; updateBookingStatus(); }), 60000);
 </script>
 </body>
 </html>
