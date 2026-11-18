@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đặt xe STD</title>
+<link rel="icon" type="image/jpeg" href="logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F6F8;
+    --panel:#FFFFFF;
+    --ink:#1A2233;
+    --ink-soft:#6B7280;
+    --badge:#4C5FD5;
+    --badge-dark:#3B4BC0;
+    --add-btn:#2E9E5B;
+    --add-btn-dark:#25824A;
+    --border:#C4C8D0;
+    --grid-line:#D6D9DE;
+    --booked-bg:#FDE68A;
+    --booked-bg-hover:#FCD34D;
+    --booked-text:#8A5A00;
+    --admin-btn:#6B7280;
+    --admin-btn-on:#B04632;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+  }
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:14px 18px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .left-group, .right-group{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .site-logo{
+    height:46px;
+    width:auto;
+    display:block;
+    flex:none;
+  }
+  .xe-dropdown{ position:relative; }
+  .xe-add-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:nowrap;
+    min-width:0;
+  }
+  .plate-toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--badge);
+    color:#fff;
+    font-weight:700;
+    font-size:0.95rem;
+    padding:9px 16px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    white-space:nowrap;
+  }
+  .plate-toggle:hover{ filter:brightness(0.92); }
+  .plate-toggle .caret{ font-size:0.75rem; opacity:0.85; }
+  .xe-dropdown-menu{
+    display:none;
+    position:absolute;
+    top:calc(100% + 6px);
+    left:0;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:12px;
+    box-shadow:0 10px 28px rgba(20,24,34,0.18);
+    padding:6px;
+    min-width:220px;
+    z-index:40;
+  }
+  .xe-dropdown-menu.open{ display:block; }
+  .xe-dropdown-menu .car-option{
+    display:block;
+    width:100%;
+    text-align:left;
+    color:#fff;
+    font-weight:700;
+    font-size:0.88rem;
+    padding:10px 12px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    margin-bottom:5px;
+  }
+  .xe-dropdown-menu .car-option:last-child{ margin-bottom:0; }
+  .xe-dropdown-menu .car-option.active{ box-shadow:0 0 0 2px #1A2233 inset; }
+  .xe-dropdown-menu .car-option:hover{ filter:brightness(0.92); }
+  .controls label{
+    font-size:0.85rem;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  select{
+    padding:8px 10px;
+    border:1px solid var(--border);
+    border-radius:7px;
+    font-family:inherit;
+    font-size:0.88rem;
+    background:#fff;
+    color:var(--ink);
+  }
+  .btn-add{
+    background:var(--add-btn);
+    color:#fff;
+    border:none;
+    padding:10px 16px;
+    border-radius:8px;
+    font-size:0.88rem;
+    font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+    white-space:nowrap;
+  }
+  .btn-add:hover{background:var(--add-btn-dark);}
+
+  .btn-admin{
+    background:#fff;
+    color:var(--admin-btn);
+    border:1px solid var(--border);
+    width:36px;
+    height:36px;
+    padding:0;
+    border-radius:50%;
+    font-size:1rem;
+    cursor:pointer;
+    font-family:inherit;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .btn-admin.on{
+    background:#FBEDE9;
+    color:var(--admin-btn-on);
+    border-color:var(--admin-btn-on);
+  }
+
+  /* Grid */
+  .grid-wrap{
+    margin:16px 18px 40px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:auto;
+    max-height:78vh;
+    position:relative;
+  }
+  table{
+    border-collapse:separate;
+    border-spacing:0;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.72rem;
+    table-layout:fixed;
+  }
+  th, td{
+    border-right:1px solid var(--grid-line);
+    border-bottom:1px solid var(--grid-line);
+    padding:0;
+    height:22px;
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+  }
+  thead th{
+    position:sticky;
+    top:0;
+    background:#F7F8FA;
+    color:var(--ink-soft);
+    font-weight:600;
+    padding:8px 4px;
+    z-index:3;
+    font-family:'Inter',sans-serif;
+    font-size:0.75rem;
+  }
+  thead th.corner{
+    left:0;
+    z-index:4;
+    background:#F7F8FA;
+  }
+  thead th.past-day{
+    background:#E2E4E8;
+    color:#4B5563;
+  }
+  tbody th{
+    position:sticky;
+    left:0;
+    background:#FAFBFC;
+    color:var(--ink-soft);
+    font-weight:500;
+    padding:0 10px;
+    z-index:2;
+    border-right:1px solid var(--border);
+    text-align:right;
+    white-space:nowrap;
+  }
+  tbody tr:nth-child(4n+1) td, tbody tr:nth-child(4n+1) th{
+    border-top:1.5px solid #9AA0AC;
+  }
+  td.slot{cursor:default;}
+  td.slot.booked{
+    background:var(--booked-bg);
+    border-radius:6px;
+    vertical-align:middle;
+    text-align:center;
+  }
+  td.slot.booked .label{
+    display:block;
+    font-family:'Inter',sans-serif;
+    color:var(--booked-text);
+    white-space:normal;
+    word-break:break-word;
+    padding:2px 4px;
+  }
+  td.slot.booked .label .dt{
+    display:block;
+    font-size:0.78rem;
+    font-weight:600;
+    line-height:1.2;
+    opacity:0.9;
+  }
+  td.slot.booked .label .name{
+    display:block;
+    font-size:0.95rem;
+    font-weight:700;
+    line-height:1.25;
+  }
+  @media (max-width:720px){
+    .topbar{ flex-direction:row; flex-wrap:nowrap; align-items:center; gap:6px; padding:10px 10px; }
+    .site-logo{ height:32px; flex-shrink:0; }
+    .left-group{ flex:1; flex-wrap:nowrap; min-width:0; gap:6px; }
+    .xe-add-row{ flex:1; min-width:0; gap:6px; }
+    .xe-dropdown{ flex:1 1 0; min-width:0; }
+    .plate-toggle{
+      width:100%;
+      justify-content:center;
+      padding:7px 5px;
+      font-size:0.62rem;
+      gap:3px;
+      white-space:normal;
+      text-align:center;
+      line-height:1.15;
+    }
+    .plate-toggle svg{ width:13px; height:13px; flex-shrink:0; }
+    #openModalBtn{
+      flex:0 0 auto;
+      padding:7px 9px;
+      font-size:0.68rem;
+      white-space:nowrap;
+    }
+    .right-group{ flex-shrink:0; }
+    td.slot.booked .label{
+      padding:1px 2px;
+      word-break:normal;
+      overflow-wrap:normal;
+    }
+    td.slot.booked .label .dt{
+      font-size:0.52rem;
+      line-height:1.1;
+    }
+    td.slot.booked .label .name{
+      font-size:0.66rem;
+      line-height:1.15;
+    }
+  }
+  body.admin-mode td.slot.booked{
+    cursor:pointer;
+  }
+  body.admin-mode td.slot.booked:hover{
+    filter:brightness(0.9);
+    outline:1px solid var(--admin-btn-on);
+    outline-offset:-1px;
+  }
+
+  /* Modal */
+  .overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(20,24,34,0.45);
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    padding:16px;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:#fff;
+    border-radius:12px;
+    width:100%;
+    max-width:420px;
+    max-height:90vh;
+    overflow:auto;
+    padding:22px;
+  }
+  .modal h3{
+    margin:0 0 16px;
+    font-size:1.15rem;
+    font-weight:700;
+  }
+  .modal form{display:grid; gap:13px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .modal label{
+    display:block;
+    font-size:0.78rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .modal input, .modal select, .modal textarea{
+    width:100%;
+    padding:9px 11px;
+    border:1px solid var(--border);
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-size:0.92rem;
+    color:var(--ink);
+    background:#fff;
+  }
+  .modal input:focus, .modal select:focus, .modal textarea:focus{
+    outline:2px solid var(--badge);
+    outline-offset:1px;
+    border-color:var(--badge);
+  }
+  .modal textarea{resize:vertical; min-height:52px;}
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    margin-top:4px;
+  }
+  .modal-actions button{
+    flex:1;
+    padding:11px;
+    border-radius:8px;
+    font-size:0.9rem;
+    font-weight:700;
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+  }
+  .btn-cancel{background:#EEF0F3; color:var(--ink);}
+  .btn-submit{background:var(--badge); color:#fff;}
+  .btn-submit:disabled{background:#B7BEDB; cursor:not-allowed;}
+  .msg{
+    padding:10px 12px;
+    border-radius:7px;
+    font-size:0.85rem;
+    display:none;
+  }
+  .msg.error{display:block; background:#FBEDE9; color:#B04632;}
+  .msg.success{display:block; background:#EAF3EC; color:#3F7D58;}
+
+  .legend{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:0 18px;
+    margin-top:12px;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+  }
+  .legend .swatch{
+    width:14px;height:14px;border-radius:3px;
+    background:var(--booked-bg);
+    display:inline-block;
+  }
+  .legend .admin-hint{
+    display:none;
+    color:var(--admin-btn-on);
+    font-weight:600;
+  }
+  body.admin-mode .legend .admin-hint{ display:inline; }
+
+  .success-modal{
+    text-align:center;
+    max-width:380px;
+  }
+  .success-icon{
+    width:52px;
+    height:52px;
+    line-height:52px;
+    border-radius:50%;
+    background:#EAF3EC;
+    color:#3F7D58;
+    font-size:1.6rem;
+    font-weight:700;
+    margin:0 auto 14px;
+  }
+  .success-modal h3{
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .success-details{
+    text-align:left;
+    background:#F7F8FA;
+    border-radius:10px;
+    padding:6px 16px;
+    margin-bottom:18px;
+  }
+  .success-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+    font-size:0.9rem;
+  }
+  .success-row:last-child{ border-bottom:none; }
+  .success-label{ color:var(--ink-soft); font-weight:500; }
+  .success-row span:last-child{ font-weight:700; text-align:right; }
+  .btn-ok{
+    width:100%;
+    padding:12px;
+    border-radius:8px;
+    border:none;
+    background:var(--add-btn);
+    color:#fff;
+    font-size:0.95rem;
+    font-weight:700;
+    font-family:inherit;
+    cursor:pointer;
+  }
+  .btn-ok:hover{ background:var(--add-btn-dark); }
+
+.btn-add:disabled { opacity:.65; cursor:not-allowed; }
+#grid thead th.day-locked { background:#fff0ed; color:#8c3022; }
+.day-lock-crosses {
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+.day-lock-cross {
+  position:absolute;
+  z-index:1;
+  background:rgba(194, 39, 39, .05);
+}
+.day-lock-cross::before, .day-lock-cross::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  background:rgba(194, 39, 39, .56);
+}
+.day-lock-cross::before { clip-path:polygon(0 0, 10% 0, 100% 100%, 90% 100%); }
+.day-lock-cross::after { clip-path:polygon(90% 0, 100% 0, 10% 100%, 0 100%); }
+.day-lock-label { display:block; font-size:.68rem; line-height:1.2; }
+.day-lock-button { display:none; margin:3px auto 0; padding:2px 4px; border:1px solid #d9ad43; border-radius:4px; background:#fff2cc; color:#634300; font:inherit; font-size:.68rem; cursor:pointer; }
+.admin-mode .day-lock-button { display:block; }
+#dateAdminMessage { margin:0; padding:8px 12px; color:#775000; background:#fff4cd; font-size:13px; }
+#bookingStatus { margin:0; padding:8px 12px; background:#fff4cd; color:#775000; font-size:13px; }
+#carAdminBtn { background:#fff2cc; border:1px solid #d9ad43; border-radius:6px; padding:7px 10px; cursor:pointer; }
+#carAdminForm { display:grid; gap:14px; }
+#carAdminForm .lock-option { display:flex; align-items:center; gap:9px; }
+#carAdminForm input[type=checkbox] { width:auto; }
+</style>
+</head>
+<body>
+
+  <div class="overlay open" id="selectXeOverlay">
+    <div class="modal" style="text-align:center;">
+      <h3>Vui lòng chọn xe</h3>
+      <select id="initialXeSelect" style="width:100%; padding:10px 11px; border:1px solid var(--border); border-radius:7px; font-size:0.95rem; margin:14px 0; font-family:inherit;"></select>
+      <button type="button" class="btn-add" id="initialXeConfirmBtn" style="width:100%;">Chọn</button>
+    </div>
+  </div>
+
+  <div id="appContent" style="display:none;">
+
+  <div class="topbar">
+    <div class="left-group">
+      <img src="logo.jpg" alt="Logo" class="site-logo">
+      <div class="xe-add-row">
+        <div class="xe-dropdown">
+          <button type="button" class="plate-toggle" id="xeDropdownBtn">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="11" width="18" height="6" rx="1.5" stroke="white" stroke-width="1.8"/><circle cx="7.5" cy="17" r="1.4" fill="white"/><circle cx="16.5" cy="17" r="1.4" fill="white"/></svg>
+            <span id="xeDropdownBtnLabel">BIỂN SỐ XE</span> <span class="caret">▾</span>
+          </button>
+          <div class="xe-dropdown-menu" id="xeDropdownMenu"></div>
+        </div>
+        <button class="btn-add" id="openModalBtn">+ Đặt xe</button>
+      </div>
+    </div>
+    <div class="right-group">
+      <button type="button" id="carAdminBtn" hidden>Quản lý xe</button>
+      <button class="btn-admin" id="adminToggleBtn" title="Chế độ Admin">🔒</button>
+    </div>
+  </div>
+
+  <p id="bookingStatus" role="status">Đang kiểm tra trạng thái đặt xe…</p>
+  <p id="dateAdminMessage" role="status" hidden></p>
+  <div class="grid-wrap">
+    <table id="grid"></table>
+    <div id="dayLockCrosses" class="day-lock-crosses" aria-hidden="true"></div>
+  </div>
+
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h3 id="modalTitle">Đăng ký đặt xe</h3>
+      <div id="formMsg" class="msg"></div>
+      <form id="bookingForm">
+        <div>
+          <label for="nguoiDat">Tên người đặt</label>
+          <input type="text" id="nguoiDat" required placeholder="VD: Nguyễn Văn A">
+        </div>
+        <div>
+          <label for="ngay">Ngày sử dụng</label>
+          <input type="date" id="ngay" required>
+        </div>
+        <div class="row2">
+          <div>
+            <label for="gioBatDau">Giờ bắt đầu</label>
+            <select id="gioBatDau" required></select>
+          </div>
+          <div>
+            <label for="gioKetThuc">Giờ kết thúc</label>
+            <select id="gioKetThuc" required></select>
+          </div>
+        </div>
+        <div>
+          <label for="ghiChu">Ghi chú (không bắt buộc)</label>
+          <textarea id="ghiChu" placeholder="Thông tin thêm nếu có"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="cancelBtn">Hủy</button>
+          <button type="submit" class="btn-submit" id="submitBtn">Đặt xe</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="overlay" id="successOverlay">
+    <div class="modal success-modal">
+      <div class="success-icon">✓</div>
+      <h3>Đã đặt xe thành công</h3>
+      <div class="success-details">
+        <div class="success-row"><span class="success-label">Biển số xe</span><span id="successPlate"></span></div>
+        <div class="success-row"><span class="success-label">Ngày đặt</span><span id="successDate"></span></div>
+        <div class="success-row"><span class="success-label">Thời gian</span><span id="successTime"></span></div>
+        <div class="success-row"><span class="success-label">Người đặt</span><span id="successName"></span></div>
+      </div>
+      <button type="button" class="btn-ok" id="successOkBtn">OK</button>
+    </div>
+  </div>
+
+<div class="overlay" id="carAdminOverlay">
+  <div class="modal">
+    <h3>Quản lý xe</h3>
+    <form id="carAdminForm">
+      <div><label for="adminCarSelect">Xe</label><select id="adminCarSelect"></select></div>
+      <div><label for="adminPlate">Biển số xe</label><input id="adminPlate" required maxlength="20" autocomplete="off"></div>
+      <label class="lock-option"><input id="adminBookingOpen" type="checkbox"> Mở đặt xe</label>
+      <p style="margin:0;font-size:13px;">Bỏ chọn để khóa đặt mới. Lịch đã đặt vẫn được giữ lại.</p>
+      <p id="carAdminMsg" role="status"></p>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="closeCarAdmin">Đóng</button><button type="submit" class="btn-submit" id="saveCarAdmin">Lưu</button></div>
+    </form>
+  </div>
+</div>
+<script>
+  // ĐIỀN URL WEB APP APPS SCRIPT CỦA BẠN VÀO ĐÂY SAU KHI DEPLOY
+  const API_URL = 'https://script.google.com/macros/s/AKfycbyLZaNu3I7RpVRU6oX5SpyOPsKWMsWcO5R-TnA9nknMkWSAYMnyaJbu4bASbkaOfzO7/exec';
+  // Danh sách xe: thêm xe mới vào đây là web tự nhận (xem hướng dẫn trong Code.gs
+  // để tạo tab tương ứng trong Google Sheet cho mỗi xe — "plate" phải khớp với CARS trong Code.gs)
+  const XE_LIST = [
+    { plate: '63A20430', displayPlate: '63A20430', hang: 'B', label: '63A20430_ Hạng B', color: '#F97316', bookingOpen: false },
+    { plate: '63A20469', displayPlate: '63A20469', hang: 'C1', label: '63A20469_Hạng C1', color: '#DC2626', bookingOpen: true }
+  ];
+  let currentXe = XE_LIST[0].plate;
+  let carsReady = false;
+  let configRevision = 0;
+  let lockedDates = new Set();
+  let bookingPending = false;
+  let dateLockPending = false;
+
+  const DAY_START_MIN = 6*60;   // 06:00
+  const DAY_END_MIN   = 22*60;  // 22:00
+  const SLOT_MIN = 15;
+
+  const xeDropdownBtn = document.getElementById('xeDropdownBtn');
+  const xeDropdownBtnLabel = document.getElementById('xeDropdownBtnLabel');
+  const xeDropdownMenu = document.getElementById('xeDropdownMenu');
+
+  function updateXeButton(){
+    const car = XE_LIST.find(c => c.plate === currentXe);
+    if(car){
+      xeDropdownBtnLabel.textContent = car.label;
+      xeDropdownBtn.style.background = car.color;
+    }
+  }
+
+  function renderXeDropdownMenu(){
+    xeDropdownMenu.innerHTML = XE_LIST.map(car => `
+      <button type="button" class="car-option${car.plate===currentXe?' active':''}" style="background:${car.color}" data-plate="${car.plate}">${escapeHtml(car.label)}</button>
+    `).join('');
+  }
+  xeDropdownBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    xeDropdownMenu.classList.toggle('open');
+  });
+  xeDropdownMenu.addEventListener('click', (e) => {
+    const btn = e.target.closest('.car-option');
+    if(!btn) return;
+    currentXe = btn.dataset.plate;
+    updateXeButton();
+    updateBookingStatus();
+    renderXeDropdownMenu();
+    xeDropdownMenu.classList.remove('open');
+    loadBookings();
+  });
+  document.addEventListener('click', (e) => {
+    if(!xeDropdownMenu.contains(e.target) && e.target !== xeDropdownBtn){
+      xeDropdownMenu.classList.remove('open');
+    }
+  });
+  updateXeButton();
+  renderXeDropdownMenu();
+
+  const gridEl = document.getElementById('grid');
+  const gridWrap = gridEl.parentElement;
+  const dayLockCrosses = document.getElementById('dayLockCrosses');
+  const gridResizeObserver = new ResizeObserver(drawDayLockCrosses);
+  gridResizeObserver.observe(gridEl);
+  let allBookings = [];
+
+  // --- Admin mode ---
+  let adminMode = false;
+  let adminPassword = '';
+  const adminToggleBtn = document.getElementById('adminToggleBtn');
+
+  function logoutAdmin(){
+    adminMode = false; adminPassword = '';
+    document.getElementById('dateAdminMessage').hidden = true;
+    document.body.classList.remove('admin-mode');
+    adminToggleBtn.textContent = '🔒'; adminToggleBtn.classList.remove('on');
+    document.getElementById('carAdminBtn').hidden = true;
+    document.getElementById('carAdminOverlay').classList.remove('open');
+  }
+  async function postApi(payload){
+    const response = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload)});
+    const json = await response.json();
+    if(!json.ok) {
+      if(json.code === 'UNAUTHORIZED') logoutAdmin();
+      throw new Error(json.error || 'Không thực hiện được yêu cầu');
+    }
+    return json;
+  }
+  adminToggleBtn.addEventListener('click', async () => {
+    if(adminMode) { logoutAdmin(); return; }
+    const pw = window.prompt('Nhập mật khẩu quản trị:');
+    if(!pw) return;
+    adminToggleBtn.disabled = true;
+    try {
+      await postApi({action:'carAdminAuth', password:pw});
+      adminPassword = pw; adminMode = true;
+      document.body.classList.add('admin-mode');
+      adminToggleBtn.textContent = '🔓'; adminToggleBtn.classList.add('on');
+      document.getElementById('carAdminBtn').hidden = false;
+      await openCarAdmin();
+    } catch(err) { alert(err.message); }
+    finally { adminToggleBtn.disabled = false; }
+  });
+
+  function applyCars(json){
+    if(!Array.isArray(json.cars) || !XE_LIST.every(car => json.cars.some(item => item.plate === car.plate && typeof item.bookingOpen === 'boolean'))) {
+      carsReady = false; updateBookingStatus();
+      throw new Error('Cần cập nhật phần quản trị xe trong Apps Script trước khi dùng bản HTML này.');
+    }
+    if(!Array.isArray(json.lockedDates) || !Number.isInteger(json.revision)) {
+      carsReady = false; updateBookingStatus();
+      throw new Error('Cần triển khai Code.gs mới để sử dụng khóa ngày.');
+    }
+    if(carsReady && json.revision < configRevision) return;
+    const nextLockedDates = new Set(json.lockedDates);
+    const datesChanged = lockedDates.size !== nextLockedDates.size || [...lockedDates].some(day => !nextLockedDates.has(day));
+    lockedDates = nextLockedDates;
+    for(const car of XE_LIST){
+      const saved = json.cars.find(item => item.plate === car.plate);
+      car.displayPlate = saved.displayPlate;
+      car.bookingOpen = saved.bookingOpen;
+      car.label = saved.displayPlate + '_Hạng ' + car.hang;
+    }
+    configRevision = json.revision; carsReady = true;
+    if(datesChanged && gridEl.querySelector('thead')) renderGrid();
+    if(overlay.classList.contains('open')) updateBookingDateState();
+    updateXeButton(); renderXeDropdownMenu(); updateBookingStatus();
+    const select = document.getElementById('initialXeSelect');
+    const previous = select.value;
+    select.innerHTML = '<option value="" disabled>-- Chọn xe --</option>' + XE_LIST.map(car => `<option value="${car.plate}">${escapeHtml(car.label)}${car.bookingOpen ? '' : ' (Đã khóa đặt xe)'}</option>`).join('');
+    select.value = previous;
+  }
+  function updateBookingStatus(){
+    const car = XE_LIST.find(item => item.plate === currentXe);
+    const disabled = !carsReady || !car.bookingOpen;
+    document.getElementById('openModalBtn').disabled = disabled;
+    document.getElementById('openModalBtn').textContent = !carsReady ? 'Chưa sẵn sàng' : car.bookingOpen ? '+ Đặt xe' : 'Đã khóa đặt xe';
+    const status = document.getElementById('bookingStatus');
+    status.hidden = carsReady && car.bookingOpen;
+    status.textContent = !carsReady ? 'Chưa tải được trạng thái đặt xe. Vui lòng tải lại trang sau khi cập nhật Apps Script.' : 'Xe ' + car.displayPlate + ' đang khóa đặt mới. Bạn vẫn xem được lịch đã đặt.';
+    if(disabled) document.getElementById('overlay').classList.remove('open');
+  }
+  async function loadCarConfig(){
+    const response = await fetch(API_URL + '?action=carConfig', {cache:'no-store'});
+    const json = await response.json();
+    if(!json.ok) throw new Error(json.error || 'Không tải được cấu hình xe');
+    applyCars(json);
+  }
+  function fillCarAdmin(){
+    const car = XE_LIST.find(item => item.plate === document.getElementById('adminCarSelect').value);
+    document.getElementById('adminPlate').value = car.displayPlate;
+    document.getElementById('adminBookingOpen').checked = car.bookingOpen;
+  }
+  async function openCarAdmin(){
+    try {
+      await loadCarConfig();
+      document.getElementById('adminCarSelect').innerHTML = XE_LIST.map(car => `<option value="${car.plate}">${escapeHtml(car.label)}</option>`).join('');
+      document.getElementById('adminCarSelect').value = currentXe;
+      document.getElementById('carAdminMsg').textContent = '';
+      fillCarAdmin(); document.getElementById('carAdminOverlay').classList.add('open');
+    } catch(err) { alert(err.message); }
+  }
+  document.getElementById('carAdminBtn').addEventListener('click', openCarAdmin);
+  document.getElementById('adminCarSelect').addEventListener('change', fillCarAdmin);
+  document.getElementById('closeCarAdmin').addEventListener('click', () => document.getElementById('carAdminOverlay').classList.remove('open'));
+  document.getElementById('carAdminForm').addEventListener('submit', async event => {
+    event.preventDefault(); if(!adminMode) return;
+    const button = document.getElementById('saveCarAdmin'); button.disabled = true;
+    try {
+      const json = await postApi({action:'saveCarConfig', password:adminPassword, xe:document.getElementById('adminCarSelect').value,
+        displayPlate:document.getElementById('adminPlate').value.trim(), bookingOpen:document.getElementById('adminBookingOpen').checked, revision:configRevision});
+      applyCars(json);
+      document.getElementById('adminCarSelect').innerHTML = XE_LIST.map(car => `<option value="${car.plate}">${escapeHtml(car.label)}</option>`).join('');
+      document.getElementById('adminCarSelect').value = json.updatedXe; fillCarAdmin();
+      document.getElementById('carAdminMsg').textContent = 'Đã lưu.';
+    } catch(err) { document.getElementById('carAdminMsg').textContent = err.message; }
+    finally { button.disabled = false; }
+  });
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+
+  function dateToStr(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+  // Cửa sổ ngày hiển thị: hôm nay -> (hôm nay + 30), tự trượt theo ngày thật mỗi khi mở lại trang
+  function getVisibleDates(){
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dates = [];
+    for(let i = 0; i <= 30; i++){ // hôm nay..+30 = 31 ngày
+      const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
+  }
+
+  function buildTimeSlots(){
+    const slots = [];
+    for(let mins=DAY_START_MIN; mins<DAY_END_MIN; mins+=SLOT_MIN){
+      slots.push(mins);
+    }
+    return slots;
+  }
+  function minToLabel(mins){
+    return pad(Math.floor(mins/60)) + ':' + pad(mins%60);
+  }
+  function minToDisplayLabel(mins){
+    return Math.floor(mins/60) + 'h' + pad(mins%60);
+  }
+
+  const DAY_COL_WIDTH = 108; // độ rộng cố định mỗi cột ngày (px)
+  const TIME_COL_WIDTH = 90; // độ rộng cố định cột giờ bên trái (px)
+
+  function renderGrid(){
+    const visibleDates = getVisibleDates();
+    const slots = buildTimeSlots();
+    const today = todayISO();
+    const yesterday = dateToStr(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 1));
+
+    const byDate = {};
+    allBookings.forEach(b => {
+      if(!byDate[b.ngay]) byDate[b.ngay] = [];
+      const [sh,sm] = b.gioBatDau.split(':').map(Number);
+      const [eh,em] = b.gioKetThuc.split(':').map(Number);
+      byDate[b.ngay].push({
+        id: b.id,
+        startMin: sh*60+sm,
+        endMin: eh*60+em,
+        nguoiDat: b.nguoiDat,
+        ghiChu: b.ghiChu
+      });
+    });
+
+    // Cố định độ rộng cột bằng colgroup, để mọi ngày rộng bằng nhau, chữ tự xuống hàng thay vì làm giãn cột
+    let html = `<colgroup><col style="width:${TIME_COL_WIDTH}px">`;
+    visibleDates.forEach(() => { html += `<col style="width:${DAY_COL_WIDTH}px">`; });
+    html += '</colgroup>';
+
+    html += '<thead><tr><th class="corner">Giờ \\ Ngày</th>';
+    visibleDates.forEach(d => {
+      const dateStr = dateToStr(d);
+      const locked = lockedDates.has(dateStr);
+      const cssClass = locked ? 'day-locked' : dateStr === yesterday ? 'past-day' : '';
+      html += `<th class="${cssClass}">${d.getDate()}/${pad(d.getMonth()+1)}
+        ${locked ? '<span class="day-lock-label">Không đặt xe</span>' : ''}
+        <button type="button" class="day-lock-button" data-lock-date="${dateStr}" aria-label="${locked ? 'Mở lại ngày' : 'Khóa ngày'} ${ngayToVN(dateStr)} cho tất cả xe">${locked ? 'Mở lại ngày' : 'Khóa ngày'}</button></th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    // Với mỗi ngày, xác định trước các khối đã đặt (để gộp ô bằng rowspan)
+    const colCells = {};
+    visibleDates.forEach(d => {
+      const dateStr = dateToStr(d);
+      const bookings = byDate[dateStr] || [];
+      const cells = new Array(slots.length).fill(null).map(() => ({ type: 'empty' }));
+      bookings.forEach(b => {
+        const effStart = Math.max(b.startMin, DAY_START_MIN);
+        const effEnd = Math.min(b.endMin, DAY_END_MIN);
+        if (effEnd <= effStart) return;
+        const startIdx = Math.round((effStart - DAY_START_MIN) / SLOT_MIN);
+        const endIdx = Math.round((effEnd - DAY_START_MIN) / SLOT_MIN);
+        if (startIdx < 0 || startIdx >= cells.length) return;
+        cells[startIdx] = { type: 'bookedStart', span: endIdx - startIdx, booking: b };
+        for (let k = startIdx + 1; k < endIdx && k < cells.length; k++) {
+          cells[k] = { type: 'skip' };
+        }
+      });
+      colCells[dateStr] = cells;
+    });
+
+    slots.forEach((mins, slotIdx) => {
+      html += `<tr><th>${minToDisplayLabel(mins)} - ${minToDisplayLabel(mins+SLOT_MIN)}</th>`;
+      visibleDates.forEach(d => {
+        const dateStr = dateToStr(d);
+        const cell = colCells[dateStr][slotIdx];
+        if (cell.type === 'skip') {
+          return; // ô này đã được gộp vào rowspan của dòng phía trên, không render lại
+        }
+        if (cell.type === 'bookedStart') {
+          const b = cell.booking;
+          const title = `${b.nguoiDat}: ${minToLabel(b.startMin)}–${minToLabel(b.endMin)}${b.ghiChu ? ' · ' + b.ghiChu : ''}`;
+          const today = todayISO();
+          let nameHtml, cellStyle;
+          if (dateStr < today) {
+            // Ngày quá khứ: chữ thường, màu xám đậm
+            nameHtml = escapeHtml(b.nguoiDat);
+            cellStyle = `background:#E2E4E8; color:#4B5563;`;
+          } else {
+            const color = nameToColor(b.nguoiDat);
+            cellStyle = `background:${color.bg}; color:${color.text};`;
+            if (dateStr === today) {
+              // Hôm nay: chữ in hoa
+              nameHtml = escapeHtml(b.nguoiDat).toUpperCase();
+            } else {
+              // Ngày tương lai: chữ thường
+              nameHtml = escapeHtml(b.nguoiDat);
+            }
+          }
+          const ngayLabel = `${pad(d.getDate())}/${pad(d.getMonth()+1)}`;
+          const gioLabel = `${minToDisplayLabel(b.startMin)} - ${minToDisplayLabel(b.endMin)}`;
+          html += `<td class="slot booked" style="${cellStyle}" rowspan="${cell.span}" data-id="${escapeAttr(b.id)}" data-name="${escapeAttr(b.nguoiDat)}" data-date="${dateStr}" data-start="${minToLabel(b.startMin)}" data-end="${minToLabel(b.endMin)}" title="${escapeAttr(title)}"><span class="label"><span class="dt">${ngayLabel}</span><span class="dt">${gioLabel}</span><span class="name">${nameHtml}</span></span></td>`;
+        } else {
+          html += '<td class="slot"></td>';
+        }
+      });
+      html += '</tr>';
+    });
+    html += '</tbody>';
+    gridEl.innerHTML = html;
+    drawDayLockCrosses();
+  }
+
+  function drawDayLockCrosses(){
+    const lockedHeaders = gridEl.querySelectorAll('thead th.day-locked');
+    const body = gridEl.tBodies[0];
+    const crosses = document.createDocumentFragment();
+    if(body && lockedHeaders.length){
+      const frame = gridWrap.getBoundingClientRect();
+      const bodyBox = body.getBoundingClientRect();
+      const leftOrigin = frame.left + gridWrap.clientLeft - gridWrap.scrollLeft;
+      const topOrigin = frame.top + gridWrap.clientTop - gridWrap.scrollTop;
+      for(const header of lockedHeaders){
+        const box = header.getBoundingClientRect();
+        const cross = document.createElement('div');
+        cross.className = 'day-lock-cross';
+        cross.style.left = (box.left - leftOrigin) + 'px';
+        cross.style.width = box.width + 'px';
+        cross.style.top = (bodyBox.top - topOrigin) + 'px';
+        cross.style.height = bodyBox.height + 'px';
+        crosses.append(cross);
+      }
+    }
+    dayLockCrosses.replaceChildren(crosses);
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+  function escapeAttr(str){
+    return String(str).replace(/"/g,'&quot;');
+  }
+
+  // Sinh 1 màu cố định riêng cho mỗi người đặt, dựa trên tên (cùng tên luôn ra cùng màu)
+  function nameToColor(name){
+    let hash = 0;
+    for(let i=0; i<name.length; i++){
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return {
+      bg: `hsl(${hue}, 70%, 85%)`,
+      text: `hsl(${hue}, 65%, 28%)`
+    };
+  }
+
+  async function loadBookings(){
+    try{
+      const requestedXe = currentXe;
+      const res = await fetch(`${API_URL}?xe=${encodeURIComponent(requestedXe)}`, {cache:'no-store'});
+      const json = await res.json();
+      if(requestedXe !== currentXe) return;
+      if(!json.ok) throw new Error(json.error || 'Lỗi tải dữ liệu');
+      applyCars(json);
+      allBookings = json.data;
+      renderGrid();
+    }catch(err){
+      dayLockCrosses.replaceChildren();
+      gridEl.innerHTML = `<tbody><tr><td style="padding:20px;font-family:Inter,sans-serif;color:#B04632;">Không tải được lịch. Kiểm tra lại đường dẫn API. (${err.message})</td></tr></tbody>`;
+    }
+  }
+
+  // (Không còn chọn tháng — lưới tự động hiển thị cửa sổ ngày cố định mỗi lần renderGrid())
+
+  // Xóa lịch (chỉ hoạt động khi bật chế độ Admin)
+  gridEl.addEventListener('click', async (e) => {
+    if(!adminMode) return;
+    const lockButton = e.target.closest('button[data-lock-date]');
+    if(lockButton){
+      if(dateLockPending || !carsReady) return;
+      const day = lockButton.dataset.lockDate;
+      const locked = !lockedDates.has(day);
+      const verb = locked ? 'Khóa đặt xe' : 'Mở lại đặt xe';
+      if(!window.confirm(`${verb} ngày ${ngayToVN(day)} cho tất cả xe?`)) return;
+      const message = document.getElementById('dateAdminMessage');
+      dateLockPending = true;
+      lockButton.disabled = true;
+      message.hidden = true;
+      try {
+        const json = await postApi({action:'setDateLock', password:adminPassword, ngay:day, locked});
+        applyCars(json);
+        message.textContent = `${locked ? 'Đã khóa' : 'Đã mở lại'} ngày ${ngayToVN(day)} cho tất cả xe.`;
+      } catch(err) {
+        message.textContent = err.message;
+      } finally {
+        message.hidden = !adminMode;
+        dateLockPending = false;
+        lockButton.disabled = false;
+      }
+      return;
+    }
+    const cell = e.target.closest('td.slot.booked');
+    if(!cell) return;
+
+    const name = cell.dataset.name;
+    const date = cell.dataset.date;
+    const start = cell.dataset.start;
+    const end = cell.dataset.end;
+    const id = cell.dataset.id;
+
+    const confirmed = window.confirm(`Xóa lịch của "${name}" ngày ${date}, ${start}–${end}?`);
+    if(!confirmed) return;
+
+    try{
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'delete', id: id, password: adminPassword, xe: currentXe })
+      });
+      const json = await res.json();
+      if(!json.ok){
+        alert('Không xóa được: ' + json.error);
+        if(String(json.error).includes('Sai mật khẩu')){
+          logoutAdmin();
+        }
+      } else {
+        await loadBookings();
+      }
+    }catch(err){
+      alert('Có lỗi khi xóa: ' + err.message);
+    }
+  });
+
+  // Modal đặt xe
+  const overlay = document.getElementById('overlay');
+  const openModalBtn = document.getElementById('openModalBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const form = document.getElementById('bookingForm');
+  const formMsg = document.getElementById('formMsg');
+  const submitBtn = document.getElementById('submitBtn');
+
+  function todayISO(){
+    const d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  }
+  function ngayToVN(ngayStr){
+    const [y,m,d] = ngayStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  const successOverlay = document.getElementById('successOverlay');
+  const successOkBtn = document.getElementById('successOkBtn');
+  function openSuccessDialog(payload){
+    const car = XE_LIST.find(c => c.plate === currentXe);
+    document.getElementById('successPlate').textContent = car ? car.label : currentXe;
+    document.getElementById('successDate').textContent = ngayToVN(payload.ngay);
+    document.getElementById('successTime').textContent = `${minToDisplayLabel(toMin(payload.gioBatDau))} - ${minToDisplayLabel(toMin(payload.gioKetThuc))}`;
+    document.getElementById('successName').textContent = payload.nguoiDat;
+    successOverlay.classList.add('open');
+  }
+  function toMin(hhmm){
+    const [h,m] = hhmm.split(':').map(Number);
+    return h*60+m;
+  }
+  successOkBtn.addEventListener('click', () => {
+    successOverlay.classList.remove('open');
+  });
+
+  // Nếu ngày chọn là hôm nay, ẩn các khung giờ đã qua (chỉ cho đặt từ giờ hiện tại trở đi)
+  function computeCutoffMin(ngayStr){
+    if(ngayStr !== todayISO()) return DAY_START_MIN;
+    const now = new Date();
+    let mins = now.getHours()*60 + now.getMinutes();
+    mins = Math.ceil(mins / SLOT_MIN) * SLOT_MIN; // làm tròn lên mốc 15 phút gần nhất
+    return Math.max(mins, DAY_START_MIN);
+  }
+
+  function populateTimeSelects(){
+    const ngayVal = document.getElementById('ngay').value || todayISO();
+    const cutoff = computeCutoffMin(ngayVal);
+    const startSel = document.getElementById('gioBatDau');
+    const endSel = document.getElementById('gioKetThuc');
+    let startOptions = '';
+    let endOptions = '';
+    for(let mins=DAY_START_MIN; mins<DAY_END_MIN; mins+=SLOT_MIN){
+      if(mins < cutoff) continue;
+      const value = minToLabel(mins);
+      const label = minToDisplayLabel(mins);
+      startOptions += `<option value="${value}">${label}</option>`;
+    }
+    for(let mins=DAY_START_MIN+SLOT_MIN; mins<=DAY_END_MIN; mins+=SLOT_MIN){
+      if(mins <= cutoff) continue;
+      const value = minToLabel(mins);
+      const label = minToDisplayLabel(mins);
+      endOptions += `<option value="${value}">${label}</option>`;
+    }
+    if(!startOptions){
+      startSel.innerHTML = '<option value="">Đã hết giờ hôm nay</option>';
+      endSel.innerHTML = '<option value="">—</option>';
+      return;
+    }
+    startSel.innerHTML = startOptions;
+    endSel.innerHTML = endOptions || `<option value="${minToLabel(DAY_END_MIN)}">${minToDisplayLabel(DAY_END_MIN)}</option>`;
+    // Mặc định chọn khung giờ đầu tiên còn khả dụng / khung giờ khoảng 1 tiếng sau đó
+    startSel.selectedIndex = 0;
+    endSel.selectedIndex = Math.min(3, endSel.options.length - 1);
+  }
+
+  function openModal(){
+    if(!carsReady || !XE_LIST.find(car => car.plate === currentXe).bookingOpen) return;
+    overlay.classList.add('open');
+    const car = XE_LIST.find(c => c.plate === currentXe);
+    document.getElementById('modalTitle').textContent = `Đăng ký đặt xe ${car ? car.label : currentXe}`;
+    formMsg.className = 'msg';
+    formMsg.style.display = 'none';
+    form.reset();
+    document.getElementById('ngay').value = todayISO();
+    document.getElementById('ngay').min = todayISO();
+    populateTimeSelects();
+    updateBookingDateState();
+  }
+  function updateBookingDateState(){
+    const locked = lockedDates.has(document.getElementById('ngay').value);
+    submitBtn.disabled = bookingPending || locked;
+    if(locked){
+      formMsg.textContent = 'Không đặt xe vào ngày đó.';
+      formMsg.className = 'msg error';
+      formMsg.style.display = '';
+    } else if(formMsg.textContent === 'Không đặt xe vào ngày đó.'){
+      formMsg.textContent = '';
+      formMsg.style.display = 'none';
+    }
+    return locked;
+  }
+  document.getElementById('ngay').addEventListener('change', () => {
+    populateTimeSelects();
+    updateBookingDateState();
+  });
+  function closeModal(){ overlay.classList.remove('open'); }
+
+  openModalBtn.addEventListener('click', openModal);
+  cancelBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if(bookingPending || updateBookingDateState()) return;
+    if(!carsReady || !XE_LIST.find(car => car.plate === currentXe).bookingOpen) { updateBookingStatus(); return; }
+    formMsg.className = 'msg';
+    formMsg.style.display = 'none';
+    bookingPending = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Đang gửi...';
+
+    const payload = {
+      nguoiDat: document.getElementById('nguoiDat').value.trim(),
+      ngay: document.getElementById('ngay').value,
+      gioBatDau: document.getElementById('gioBatDau').value,
+      gioKetThuc: document.getElementById('gioKetThuc').value,
+      ghiChu: document.getElementById('ghiChu').value.trim(),
+      xe: currentXe
+    };
+
+    try{
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if(json.cars) applyCars(json);
+      if(!json.ok){
+        formMsg.textContent = json.error;
+        formMsg.className = 'msg error';
+        formMsg.style.display = '';
+      } else {
+        closeModal();
+        openSuccessDialog(payload);
+        await loadBookings();
+      }
+    }catch(err){
+      formMsg.textContent = 'Có lỗi khi gửi yêu cầu: ' + err.message;
+      formMsg.className = 'msg error';
+      formMsg.style.display = '';
+    }finally{
+      bookingPending = false;
+      updateBookingDateState();
+      submitBtn.textContent = 'Đặt xe';
+    }
+  });
+
+  /* ---------- Màn hình chọn xe ban đầu ---------- */
+  const initialXeSelect = document.getElementById('initialXeSelect');
+  initialXeSelect.innerHTML = '<option value="" selected disabled>-- Chọn xe --</option>' +
+    XE_LIST.map(car => `<option value="${car.plate}">${escapeHtml(car.label)}</option>`).join('');
+
+  document.getElementById('initialXeConfirmBtn').addEventListener('click', () => {
+    if(!initialXeSelect.value){
+      alert('Vui lòng chọn 1 xe trước khi tiếp tục.');
+      return;
+    }
+    currentXe = initialXeSelect.value;
+    document.getElementById('selectXeOverlay').classList.remove('open');
+    document.getElementById('appContent').style.display = '';
+    updateXeButton();
+    updateBookingStatus();
+    renderXeDropdownMenu();
+    renderGrid();
+    loadBookings();
+  });
+  updateBookingStatus();
+  loadCarConfig().catch(() => { carsReady = false; updateBookingStatus(); });
+  // Đồng bộ khóa/mở và biển số trên các máy đang mở trang.
+  setInterval(() => loadCarConfig().catch(() => { carsReady = false; updateBookingStatus(); }), 60000);
+</script>
+</body>
+</html>
